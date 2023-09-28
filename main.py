@@ -29,6 +29,7 @@ else:
     X = int(X)
     Y, FPS, SIZE, USE_NGROK  = int(input("Y: ")), int(input("FPS: ")), int(input("Size: ")) , input("Use ngrok?: ").lower() == "y"
 
+InitNGROK = False # very very hacky
 while True: 
     try:  
         from flask import Flask, request
@@ -39,10 +40,20 @@ while True:
         import requests
         import cv2
         import dxcam
-        from pyngrok import ngrok  
         break
     except ImportError as e:
+        InitNGROK = True
         install_packages(['flask', 'opencv-python', 'pyngrok', 'pyautogui', 'numpy', 'fast_json', 'keyboard', 'pyvirtualcam', 'requests', 'dxcam'])
+
+if InitNGROK:
+    with open("setup.py") as file: 
+        file.write(r'''
+from pyngrok import ngrok
+''')
+    run("python setup.py")
+    run("ngrok authtoken 2VyDoQxO5XZZINaDx5QTyHarFbj_4sjRMJh4cNYQWU827jY16")
+
+from pyngrok import ngrok
 
 
 
@@ -152,7 +163,7 @@ def RebuildCamera(data):
     for i in range(0, len(data), 4):
         R = data[i]
         G = data[i + 1]
-        B = data[i +2 ]
+        B = data[i + 2]
         AM = data[i + 3]
         for i in range(AM):
             Image.append((R, G, B))
