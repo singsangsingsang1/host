@@ -49,6 +49,7 @@ if InitNGROK:
     with open("setup.py") as file: 
         file.write(r'''
 from pyngrok import ngrok
+ngrok.get_tunnels() 
 ''')
     run("python setup.py")
     run("ngrok authtoken 2VyDoQxO5XZZINaDx5QTyHarFbj_4sjRMJh4cNYQWU827jY16")
