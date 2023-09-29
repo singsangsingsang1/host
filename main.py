@@ -246,6 +246,7 @@ app = Flask(__name__)
 @app.route('/VMRefresh', methods = ["POST"]) 
 def VMRefresh():
     lib.clear_compressor_cache()
+    return "OK!"
 
 @app.route('/VMInput', methods = ["POST"]) # type: ignore
 def VMInput():
