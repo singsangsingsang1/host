@@ -242,7 +242,7 @@ class VM:
 Machine = VM()
 app = Flask(__name__)
 
-@app.route('/PingVM', methods = ["POST"]) 
+@app.route('/PingVM', methods = ["GET"]) 
 def PingVM():
     return "OK!"
 
