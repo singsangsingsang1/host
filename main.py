@@ -161,12 +161,13 @@ def TakeScreenshots(Data):
 
     return screenshots
 
+WEBCAMX = 10 
+WEBCAMY = 10
 
-
-Frame = np.zeros((10, 10, 3), dtype=np.uint8)
+Frame = np.zeros((WEBCAMX, WEBCAMY, 3), dtype=np.uint8)
 def Webcam():
     global Frame
-    with pyvirtualcam.Camera(width=10, height=10, fps=20) as cam:
+    with pyvirtualcam.Camera(width=WEBCAMX, height=WEBCAMY, fps=20) as cam:
         while True:
             cam.send(Frame)
             cam.sleep_until_next_frame()
@@ -181,7 +182,7 @@ def RebuildCamera(data):
         for i in range(AM):
             Image.append((R, G, B))
         
-    return np.array(Image).reshape((10, 10, 3)).astype(np.uint8)
+    return np.array(Image).reshape((WEBCAMX, WEBCAMY, 3)).astype(np.uint8)
 
 def WebcamDaemon():
     WebcamThread = threading.Thread(target=Webcam)
