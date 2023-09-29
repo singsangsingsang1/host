@@ -242,6 +242,10 @@ class VM:
 Machine = VM()
 app = Flask(__name__)
 
+@app.route('/PingVM', methods = ["POST"]) 
+def PingVM():
+    return "OK!"
+
 
 @app.route('/VMRefresh', methods = ["POST"]) 
 def VMRefresh():
