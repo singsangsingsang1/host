@@ -2,10 +2,10 @@ import ctypes
 from ctypes import *
 import atexit
 import threading, zlib, os, logging, time
-
+import sys
+#these first 70 lines are the worst lines ive ever written ever lol fuck 
 def run(cmd):
     return os.popen(cmd).read().replace("\n", "")
-
 
 def install_packages(package_list):
     existing_packages = run("pip list")
@@ -15,19 +15,28 @@ def install_packages(package_list):
             run(f"pip install {package}")
 
 
-os.system("cls")
-X = input("X: ")
+    print("")
 
-if X == "":
+os.system("cls")
+if len(sys.argv) == 1:
+    X = input("X: ")
+
+    if X == "":
+        X = 192
+        Y = 108
+        FPS = 60
+        SIZE = 7
+        USE_NGROK = True
+        print("default")
+    else:
+        X = int(X)
+        Y, FPS, SIZE, USE_NGROK  = int(input("Y: ")), int(input("FPS: ")), int(input("Size: ")) , input("Use ngrok?: ").lower() == "y"
+else:
     X = 192
     Y = 108
     FPS = 60
     SIZE = 7
     USE_NGROK = True
-    print("default")
-else:
-    X = int(X)
-    Y, FPS, SIZE, USE_NGROK  = int(input("Y: ")), int(input("FPS: ")), int(input("Size: ")) , input("Use ngrok?: ").lower() == "y"
 
 InitNGROK = False # very very hacky
 while True: 
