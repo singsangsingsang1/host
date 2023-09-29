@@ -161,7 +161,7 @@ def TakeScreenshots(Data):
 
 
 
-Frame = np.zeros((WEBCAMX, WEBCAMy, 3), dtype=np.uint8)
+Frame = np.zeros((WEBCAMX, WEBCAMY, 3), dtype=np.uint8)
 def Webcam():
     global Frame
     with pyvirtualcam.Camera(width=WEBCAMX, height=WEBCAMY, fps=20) as cam:
