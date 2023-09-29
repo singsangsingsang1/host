@@ -71,7 +71,7 @@ log = logging.getLogger('werkzeug')
 log.disabled = True
 
 
-SERVER_URL = "https://image.glorytosouthsud.repl.co"
+SERVER_URL = "https://image.glorytosouthsud.repl.co/"
 
 
 
