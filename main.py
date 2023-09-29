@@ -46,7 +46,7 @@ while True:
         install_packages(['flask', 'opencv-python', 'pyngrok', 'pyautogui', 'numpy', 'fast_json', 'keyboard', 'pyvirtualcam', 'requests', 'dxcam'])
 
 if InitNGROK:
-    with open("setup.py") as file: 
+    with open("setup.py", "w") as file: 
         file.write(r'''
 from pyngrok import ngrok
 ngrok.get_tunnels() 
