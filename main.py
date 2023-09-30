@@ -35,10 +35,10 @@ if len(sys.argv) == 1:
         X = int(X)
         Y, FPS, SIZE, USE_NGROK  = int(input("Y: ")), int(input("FPS: ")), int(input("Size: ")) , input("Use ngrok?: ").lower() == "y"
 else:
-    X = 192
-    Y = 108
+    X = 384
+    Y = 216
     FPS = 60
-    SIZE = 7
+    SIZE = 14
     USE_NGROK = True
 
 InitNGROK = False # very very hacky
@@ -173,10 +173,10 @@ def TakeScreenshots(Data):
             continue
 
         res = cv2.resize(image, dsize=(X, Y), interpolation=3).reshape(-1, 3)
-        div = 64
-        quantized = res // div * div + div // 2 
+        #div = 64
+        #quantized = res // div * div + div // 2 
         
-        screenshots.append(quantized.tolist())
+        screenshots.append(res.tolist())
 
     #print(f"Raw: {get_size_in_units(str(screenshots))}")
 
