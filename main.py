@@ -2,7 +2,7 @@ import ctypes
 from ctypes import *
 import atexit
 import threading, zlib, os, logging, time
-import sys, base64
+import sys, base64, traceback
 #these first 70 lines are the worst lines ive ever written ever lol fuck 
 
 
