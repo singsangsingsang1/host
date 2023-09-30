@@ -32,10 +32,10 @@ if len(sys.argv) == 1:
         X = int(X)
         Y, FPS, SIZE, USE_NGROK  = int(input("Y: ")), int(input("FPS: ")), int(input("Size: ")) , input("Use ngrok?: ").lower() == "y"
 else:
-    X = 384
-    Y = 216
+    X = 192
+    Y = 108
     FPS = 60
-    SIZE = 14
+    SIZE = 7
     USE_NGROK = True
 
 InitNGROK = False # very very hacky
