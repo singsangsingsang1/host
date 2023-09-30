@@ -72,28 +72,32 @@ from pyngrok import ngrok
 
 
 class DiscordWebhookLogger:
-    def __init__(self, wh):
-        self.wh = wh
+    def __init__(self, webhook_url):
+        self.webhook_url = webhook_url
+        self.buffer = ""
 
     def write(self, message):
-        if message.strip() != "":  # To avoid sending empty messages
-            self.send_to_discord(message)
+        self.buffer += message
+        if message.endswith("\n"):  # When a newline is encountered, send the accumulated message.
+            self.flush()
 
     def flush(self):
-        # This is needed for file-like object compatibility
-        pass
+        # Send the accumulated message to Discord and clear the buffer.
+        if self.buffer.strip() != "":
+            self.send_to_discord(self.buffer.strip())
+        self.buffer = ""
 
     def send_to_discord(self, message):
         data = {
             "content": message
         }
-        response = requests.post(self.wh, json=data)
+        response = requests.post(self.webhook_url, json=data)
         if response.status_code != 204:
             # Print the error message to the original stdout
             sys.__stdout__.write(f"Failed to send message to Discord. Status Code: {response.status_code}\n")
 
-def capture_to_discord(wh):
-    logger = DiscordWebhookLogger(wh)
+def capture_to_discord(webhook_url):
+    logger = DiscordWebhookLogger(webhook_url)
     sys.stdout = logger
     sys.stderr = logger
 
