@@ -11,11 +11,7 @@ def run(cmd):
     return os.popen(cmd).read().replace("\n", "")
 
 def install_packages(package_list):
-    existing_packages = run("pip list")
-    for package in package_list:
-        if package not in existing_packages:
-            print(f"Installing {package}")
-            run(f"pip install {package}")
+    run(f"pip install {" ".join(package_list)}")
 
 
     print("")
