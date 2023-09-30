@@ -172,9 +172,11 @@ def TakeScreenshots(Data):
             screenshots.append([])
             continue
 
-        res = cv2.resize(image, dsize=(X, Y), interpolation=3).reshape(-1, 3).tolist()
-
-        screenshots.append(res)
+        res = cv2.resize(image, dsize=(X, Y), interpolation=3).reshape(-1, 3)
+        div = 64
+        quantized = res // div * div + div // 2 
+        
+        screenshots.append(quantized.tolist())
 
     #print(f"Raw: {get_size_in_units(str(screenshots))}")
 
