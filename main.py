@@ -272,15 +272,17 @@ def VMRefresh():
 
 @app.route('/VMInput', methods = ["POST"]) # type: ignore
 def VMInput():
-    RequestBody = request.get_json()
-    Type = RequestBody.get("Type")
-    Body = RequestBody.get("Body")
-    
-    ({
-        "Mouse" : Machine.Click,
-        "Keyboard" : Machine.PressAndRelease
-    })[Type](Body)
-
+    try:
+        RequestBody = request.get_json()
+        Type = RequestBody.get("Type")
+        Body = RequestBody.get("Body")
+        
+        ({
+            "Mouse" : Machine.Click,
+            "Keyboard" : Machine.PressAndRelease
+        })[Type](Body)
+    except Exception as e:
+        send_to_discord(str(e))
     return "OK!"
 
 @app.route("/GetVideoData", methods = ["POST", "GET"])
