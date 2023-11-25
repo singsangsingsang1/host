@@ -238,6 +238,8 @@ class VM:
         X = Body["X"]
         Y = Body["Y"]
         Type = Body["MouseButton"]
+        if X == 0 or Y == 0:
+            return 
         pyautogui.moveTo(X, Y)
 
         if Type == "Left":
