@@ -43,7 +43,7 @@ while True:
     try:  
         from flask import Flask, request
         import fast_json
-        import pyautogui, keyboard  
+        import keyboard  
         import pyvirtualcam
         import numpy as np
         import requests
@@ -52,7 +52,7 @@ while True:
         break
     except ImportError as e:
         InitNGROK = True
-        install_packages(['flask', 'opencv-python', 'pyngrok', 'pyautogui', 'numpy', 'fast_json', 'keyboard', 'pyvirtualcam', 'requests', 'dxcam'])
+        install_packages(['flask', 'opencv-python', 'pyngrok', 'numpy', 'fast_json', 'keyboard', 'pyvirtualcam', 'requests', 'dxcam'])
 
 if InitNGROK:
     with open("setup.py", "w") as file: 
