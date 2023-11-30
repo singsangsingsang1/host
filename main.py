@@ -230,7 +230,7 @@ def GetFrames(Data):
     return VideoData
 
 
-
+mouse_event = ctypes.windll.user32.mouse_event
 class VM:
     def __init__(self):
         pass
@@ -238,14 +238,19 @@ class VM:
         X = Body["X"]
         Y = Body["Y"]
         Type = Body["MouseButton"]
+        
+
         if X == 0 or Y == 0:
             return 
-        pyautogui.moveTo(X, Y)
-
+            
+        ctypes.windll.user32.SetCursorPos(X, Y)
+        
         if Type == "Left":
-            pyautogui.click()
+            mouse_event(2, 0, 0, 0,0) # left down
+            mouse_event(4, 0, 0, 0,0) # left up
         elif Type == "Right":
-            pyautogui.click(button='right')
+            mouse_event(8, 0, 0, 0, 0)
+            mouse_event(16, 0, 0, 0, 0)
 
 
     def PressAndRelease(self, key):
