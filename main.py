@@ -162,13 +162,13 @@ def TakeScreenshots(Data):
     FrameRecordAmount = Data["FrameRecordAmount"]
 
     screenshots = [ ]
-
+    last_image = [ ]
     for i in range(FrameRecordAmount):
         image = camera.get_latest_frame()  
-        if image is None:
+        if (image is None) or (image == last_image):
             screenshots.append([])
             continue
-
+        last_image = image
         res = cv2.resize(image, dsize=(X, Y), interpolation=3).reshape(-1, 3)
         #div = 64
         #quantized = res // div * div + div // 2 
