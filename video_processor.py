@@ -92,29 +92,13 @@ def clear_cache():
     lib.clear_compressor_cache()
     return "OK!"
 
-class RequestEvent:
-    def __init__(self):
-        self.event = threading.Event()
-        self.data = None
 
-    def wait(self):
-        self.event.wait()
-        return self.data
-
-    def set(self, data):
-        self.data = data
-        self.event.set()
 
 events = []
 
 @app.route('/video_data', methods=["GET"])
 def video_data():
-    print("greh")
 
-    new_event = RequestEvent()
-    events.append(new_event)
-    response = new_event.wait()
-    print("sending")
     return response
     
 
@@ -159,12 +143,9 @@ def inputs():
     
         payload_length = struct.pack('I', len(jsonpayload)) 
     
-        payload = payload_length + jsonpayload + processed
+        payload = os.urandom(10) + payload_length + jsonpayload + processed
         
-        for event in events:
-          print("sending")
-          event.set(payload)
-        events.clear()
+        response = randomid
 
 
 PORT = 28323
