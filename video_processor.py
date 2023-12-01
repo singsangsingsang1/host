@@ -125,6 +125,7 @@ def video_data():
 
 def inputs():
   os.system("cls")
+  time.sleep(0.1)
   X = int(input("X: "))
   Y = int(input("Y: "))
   
@@ -143,8 +144,7 @@ def inputs():
     for event in events:
       event.set(payload)
     events.clear()
-thread = threading.Thread(target=inputs)
-thread.start()
+
 
 PORT = 28323
 
