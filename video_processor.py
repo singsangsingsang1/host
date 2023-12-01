@@ -12,7 +12,7 @@ import struct
 
 from pyngrok import ngrok
 
-
+response = None
 def create_http_tunnel(Port):
     for tunnel in ngrok.get_tunnels():
         tunnel.kill()
@@ -98,7 +98,7 @@ events = []
 
 @app.route('/video_data', methods=["GET"])
 def video_data():
-
+    global response
     return response
     
 
@@ -112,6 +112,7 @@ def check_cached_file(video_path, frame_size):
     return None
 
 def inputs():
+    global response
     os.system("cls")
     time.sleep(0.1)
     X = int(input("X: "))
@@ -142,10 +143,10 @@ def inputs():
         }).encode('utf-8')  
     
         payload_length = struct.pack('I', len(jsonpayload)) 
-    
+
         payload = os.urandom(10) + payload_length + jsonpayload + processed
         
-        response = randomid
+        response = payload
 
 
 PORT = 28323
