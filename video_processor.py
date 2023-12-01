@@ -6,6 +6,7 @@ import fast_json
 import zlib
 import threading
 import time
+import requests
 from flask import Flask, request
 
 from pyngrok import ngrok
@@ -131,9 +132,9 @@ def inputs():
     frames, fps = extract_video(file_name, (X, Y))
     processed = process_frames(frames) 
     jsonpayload = json.dumps({
-        X: X,
-        Y: Y,
-        Fps: fps
+        "X": X,
+        "Y": Y,
+        "Fps": fps
     })
 
     payload = chr(len(jsonpayload)) + jsonpayload + processed
@@ -148,7 +149,7 @@ thread.start()
 PORT = 28323
 
 requests.post("https://video.glorytosouthsud.repl.co/", data = {
-  Tunnel: create_http_tunnel(PORT)
+  "Tunnel": create_http_tunnel(PORT)
 })
 
 app.run(host='0.0.0.0', port=PORT)
