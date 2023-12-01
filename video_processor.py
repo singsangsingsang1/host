@@ -109,8 +109,9 @@ events = []
 
 @app.route('/video_data', methods=["GET"])
 def video_data():
-    new_event = RequestEvent()
     print("greh")
+
+    new_event = RequestEvent()
     events.append(new_event)
     response = new_event.wait()
     print("sending")
