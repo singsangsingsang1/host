@@ -115,8 +115,16 @@ def video_data():
     response = new_event.wait()
   
     return response
+    
 
+def get_compressed_filename(video_path, resolution):
+    return f"{video_path}_extract/{resolution[0]}x{resolution[1]}_compressed.blob"
 
+def check_cached_file(video_path, frame_size):
+    compressed_file_name = get_compressed_filename(video_path, frame_size)
+    if os.path.isfile(compressed_file_name):
+        return compressed_file_name
+    return None
 
 def inputs():
     os.system("cls")
@@ -126,20 +134,21 @@ def inputs():
 
     while True:
         file_name = input("File to play: ")
-        compressed_file_name = file_name + "_extract/compressed.blob"
-        if os.path.isfile(compressed_file_name):
+        compressed_file_name = check_cached_file(file_name, (X, Y))
+        if compressed_file_name:
             with open(compressed_file_name, "rb") as file:
                 header = file.read(12)  
                 X, Y, fps = struct.unpack('iii', header)  
                 processed = file.read()
         else:
             frames, fps = extract_video(file_name, (X, Y))
+            print("compressing")
             processed = process_frames(frames)
+            compressed_file_name = get_compressed_filename(file_name, (X, Y))
             with open(compressed_file_name, "wb") as file:
                 header = struct.pack('iii', X, Y, fps)  
                 file.write(header + processed)  
-            
-    print("compressed")
+            print("compressed")
     
     jsonpayload = fast_json.dumps({
         "X": X,
