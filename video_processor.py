@@ -76,7 +76,7 @@ def extract_video(video_path, frame_size, interpolation=cv2.INTER_LINEAR):
             if not ret:
                 break
 
-            processed_frame = cv2.resize(frame, dsize=frame_size, interpolation=interpolation).reshape(-1, 3)
+            processed_frame = cv2.resize(frame, dsize=frame_size, interpolation=interpolation).reshape(-1, 3).tolist()
             frames.append(processed_frame)
 
             frame_file = os.path.join(output_folder, f"frame_{len(frames)}.jpg")
@@ -85,7 +85,7 @@ def extract_video(video_path, frame_size, interpolation=cv2.INTER_LINEAR):
     else:
         for i in range(len(os.listdir(output_folder))):
             frame_file = os.path.join(output_folder, f"frame_{i+1}.jpg")
-            frame = cv2.imread(frame_file).reshape(-1, 3)
+            frame = cv2.imread(frame_file).reshape(-1, 3).tolist()
             frames.append(frame)
 
     cap.release()
