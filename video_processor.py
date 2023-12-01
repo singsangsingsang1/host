@@ -141,7 +141,7 @@ def inputs():
         "Fps": fps
     })
     
-    payload = chr(len(jsonpayload)) + jsonpayload + processed
+    payload = chr(len(jsonpayload)) + jsonpayload + processed.decode("utf-8") 
     
     for event in events:
       print("sending")
