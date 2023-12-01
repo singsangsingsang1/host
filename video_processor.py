@@ -145,7 +145,6 @@ def inputs():
         payload_length = struct.pack('I', len(jsonpayload)) 
 
         payload = os.urandom(10) + payload_length + jsonpayload + processed
-        
         response = payload
 
 
