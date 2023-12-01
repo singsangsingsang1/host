@@ -115,8 +115,7 @@ def inputs():
         json_payload = fast_json.dumps({"X": X, "Y": Y, "Fps": fps}).encode('utf-8')
         payload_length = struct.pack('I', len(json_payload))
         payload = os.urandom(10) + payload_length + json_payload + processed
-	print(type(payload))
-        response = payload
+	response = payload
 
 
 if __name__ == "__main__":
