@@ -6,6 +6,10 @@ import fast_json
 import zlib
 import threading
 import time
+from flask import Flask, request
+
+from pyngrok import ngrok
+
 
 def create_http_tunnel(Port):
     for tunnel in ngrok.get_tunnels():
@@ -50,8 +54,6 @@ def process_frames(frames):
     return output
 
 
-import os
-import cv2
 
 def extract_video(video_path, frame_size, interpolation=cv2.INTER_LINEAR):
     output_folder = os.path.basename(video_path) + "_extract"
