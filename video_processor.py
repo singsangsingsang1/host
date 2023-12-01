@@ -130,14 +130,22 @@ def inputs():
     file_name = input("File to play: ")
     frames, fps = extract_video(file_name, (X, Y))
     processed = process_frames(frames) 
-    for event in events:
-      event.set(json.dumps({
+    jsonpayload = json.dumps({
         X: X,
         Y: Y,
-        Data: processed,
         Fps: fps
-      }))
+    })
+
+    payload = chr(len(jsonpayload)) + jsonpayload + processed
+    
+    for event in events:
+      event.set(payload)
     events.clear()
+
+thread = threading.Thread(target=inputs)
+thread.start()
+
+PORT = 28323
 
 requests.post("https://video.glorytosouthsud.repl.co/", data = {
   Tunnel: create_http_tunnel()
