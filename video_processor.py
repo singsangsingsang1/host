@@ -82,7 +82,7 @@ def extract_video(video_path, frame_size, interpolation=cv2.INTER_LINEAR):
 
 
     cap.release()
-    print("finished")
+    print("finished", fps, #frames)
     return frames, fps
 
 
@@ -144,11 +144,11 @@ def inputs():
             frames, fps = extract_video(file_name, (X, Y))
             print("compressing")
             processed = process_frames(frames)
+            print("compressed")
             compressed_file_name = get_compressed_filename(file_name, (X, Y))
             with open(compressed_file_name, "wb") as file:
                 header = struct.pack('iii', X, Y, fps)  
                 file.write(header + processed)  
-            print("compressed")
     
     jsonpayload = fast_json.dumps({
         "X": X,
