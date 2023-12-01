@@ -89,7 +89,7 @@ def extract_video(video_path, frame_size, interpolation=cv2.INTER_LINEAR):
             frames.append(frame.reshape(-1, 3).tolist())
 
     cap.release()
-
+    print("finished")
     return frames, fps
 
 
