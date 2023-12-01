@@ -80,10 +80,9 @@ def extract_video(video_path, frame_size, interpolation=cv2.INTER_LINEAR):
         processed_frame = cv2.resize(frame, dsize=frame_size, interpolation=interpolation)
         frames.append(processed_frame.reshape(-1, 3).tolist())
 
-
+    print(fps)
     cap.release()
-    print("finished", fps, #frames)
-    return frames, fps
+    return frames, int(fps)
 
 
 app = Flask(__name__)
@@ -111,9 +110,10 @@ events = []
 @app.route('/video_data', methods=["GET"])
 def video_data():
     new_event = RequestEvent()
+    print("greh")
     events.append(new_event)
     response = new_event.wait()
-  
+    print("sending")
     return response
     
 
@@ -168,7 +168,7 @@ def inputs():
 
 PORT = 28323
 
-requests.post("https://video.glorytosouthsud.repl.co/", data = {
+requests.post("https://video.glorytosouthsud.repl.co/", json = {
   "Tunnel": create_http_tunnel(PORT)
 })
 
