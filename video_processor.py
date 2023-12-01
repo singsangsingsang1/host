@@ -87,7 +87,7 @@ def extract_video(video_path, frame_size, interpolation=cv2.INTER_LINEAR):
 
 app = Flask(__name__)
 
-@app.route('/clear_cache', methods = ["POST"]) 
+@app.route('/clear_cache', methods = ["GET"]) 
 def clear_cache():
     lib.clear_compressor_cache()
     return "OK!"
