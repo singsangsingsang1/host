@@ -132,8 +132,8 @@ def inputs():
   while True:
     file_name = input("File to play: ")
     frames, fps = extract_video(file_name, (X, Y))
-    processed = process_frames(frames[1:3]) 
-    jsonpayload = json.dumps({
+    processed = process_frames(frames) 
+    jsonpayload = fast_json.dumps({
         "X": X,
         "Y": Y,
         "Fps": fps
