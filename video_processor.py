@@ -59,7 +59,6 @@ def extract_video(video_path, frame_size, interpolation=cv2.INTER_LINEAR):
     output_folder = os.path.basename(video_path) + "_extract"
     frames_extracted = False
 
-    # Create output folder if it doesn't exist
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
     else:
