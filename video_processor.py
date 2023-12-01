@@ -8,6 +8,7 @@ import threading
 import time
 import requests
 from flask import Flask, request
+import struct 
 
 from pyngrok import ngrok
 
@@ -71,23 +72,14 @@ def extract_video(video_path, frame_size, interpolation=cv2.INTER_LINEAR):
     fps = cap.get(cv2.CAP_PROP_FPS)  
     frames = []
 
-    if not frames_extracted:
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
 
-            processed_frame = cv2.resize(frame, dsize=frame_size, interpolation=interpolation)
-            frames.append(processed_frame.reshape(-1, 3).tolist())
+        processed_frame = cv2.resize(frame, dsize=frame_size, interpolation=interpolation)
+        frames.append(processed_frame.reshape(-1, 3).tolist())
 
-            frame_file = os.path.join(output_folder, f"frame_{len(frames)}.jpg")
-            cv2.imwrite(frame_file, processed_frame)
-
-    else:
-        for i in range(len(os.listdir(output_folder))):
-            frame_file = os.path.join(output_folder, f"frame_{i+1}.jpg")
-            frame = cv2.imread(frame_file)
-            frames.append(frame.reshape(-1, 3).tolist())
 
     cap.release()
     print("finished")
@@ -124,24 +116,40 @@ def video_data():
   
     return response
 
+
+
 def inputs():
-  os.system("cls")
-  time.sleep(0.1)
-  X = int(input("X: "))
-  Y = int(input("Y: "))
-  
-  while True:
-    file_name = input("File to play: ")
-    frames, fps = extract_video(file_name, (X, Y))
-    processed = process_frames(frames) 
+    os.system("cls")
+    time.sleep(0.1)
+    X = int(input("X: "))
+    Y = int(input("Y: "))
+
+    while True:
+        file_name = input("File to play: ")
+        compressed_file_name = file_name + "_extract/compressed.blob"
+        if os.path.isfile(compressed_file_name):
+            with open(compressed_file_name, "rb") as file:
+                header = file.read(12)  
+                X, Y, fps = struct.unpack('iii', header)  
+                processed = file.read()
+        else:
+            frames, fps = extract_video(file_name, (X, Y))
+            processed = process_frames(frames)
+            with open(compressed_file_name, "wb") as file:
+                header = struct.pack('iii', X, Y, fps)  
+                file.write(header + processed)  
+            
     print("compressed")
+    
     jsonpayload = fast_json.dumps({
         "X": X,
         "Y": Y,
         "Fps": fps
-    })
-    
-    payload = chr(len(jsonpayload)) + jsonpayload + processed.decode("utf-8") 
+    }).encode('utf-8')  
+
+    payload_length = struct.pack('I', len(jsonpayload)) 
+
+    payload = payload_length + jsonpayload + processed
     
     for event in events:
       print("sending")
