@@ -151,20 +151,20 @@ def inputs():
                 header = struct.pack('iii', X, Y, fps)  
                 file.write(header + processed)  
     
-    jsonpayload = fast_json.dumps({
-        "X": X,
-        "Y": Y,
-        "Fps": fps
-    }).encode('utf-8')  
-
-    payload_length = struct.pack('I', len(jsonpayload)) 
-
-    payload = payload_length + jsonpayload + processed
+        jsonpayload = fast_json.dumps({
+            "X": X,
+            "Y": Y,
+            "Fps": fps
+        }).encode('utf-8')  
     
-    for event in events:
-      print("sending")
-      event.set(payload)
-    events.clear()
+        payload_length = struct.pack('I', len(jsonpayload)) 
+    
+        payload = payload_length + jsonpayload + processed
+        
+        for event in events:
+          print("sending")
+          event.set(payload)
+        events.clear()
 
 
 PORT = 28323
