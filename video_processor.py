@@ -76,7 +76,7 @@ def extract_video(video_path, frame_size, interpolation=cv2.INTER_LINEAR):
             if not ret:
                 break
 
-            processed_frame = cv2.resize(frame, dsize=frame_size, interpolation=interpolation)
+            processed_frame = cv2.resize(frame, dsize=frame_size, interpolation=interpolation).reshape(-1, 3)
             frames.append(processed_frame)
 
             frame_file = os.path.join(output_folder, f"frame_{len(frames)}.jpg")
@@ -85,7 +85,7 @@ def extract_video(video_path, frame_size, interpolation=cv2.INTER_LINEAR):
     else:
         for i in range(len(os.listdir(output_folder))):
             frame_file = os.path.join(output_folder, f"frame_{i+1}.jpg")
-            frame = cv2.imread(frame_file)
+            frame = cv2.imread(frame_file).reshape(-1, 3)
             frames.append(frame)
 
     cap.release()
@@ -124,6 +124,7 @@ def video_data():
     return response
 
 def inputs():
+  os.system("cls")
   X = int(input("X: "))
   Y = int(input("Y: "))
   
@@ -142,7 +143,6 @@ def inputs():
     for event in events:
       event.set(payload)
     events.clear()
-
 thread = threading.Thread(target=inputs)
 thread.start()
 
@@ -151,5 +151,9 @@ PORT = 28323
 requests.post("https://video.glorytosouthsud.repl.co/", data = {
   "Tunnel": create_http_tunnel(PORT)
 })
+
+thread = threading.Thread(target=inputs)
+thread.daemon = True
+thread.start()
 
 app.run(host='0.0.0.0', port=PORT)
