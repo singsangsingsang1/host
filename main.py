@@ -3,7 +3,6 @@ from ctypes import *
 import atexit
 import threading, zlib, os, logging, time
 import sys, base64, traceback
-#these first 70 lines are the worst lines ive ever written ever lol fuck 
 
 
 
@@ -38,7 +37,7 @@ else:
     SIZE = 7
     USE_NGROK = True
 
-InitNGROK = False # very very hacky
+InitNGROK = False 
 while True: 
     try:  
         from flask import Flask, request
