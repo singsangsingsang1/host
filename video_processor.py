@@ -64,6 +64,7 @@ def extract_video(video_path, frame_size, interpolation=cv2.INTER_LINEAR):
         os.makedirs(output_folder)
     else:
         if len(os.listdir(output_folder)) > 0:
+            print("exists")
             frames_extracted = True
 
     cap = cv2.VideoCapture(video_path)
@@ -133,15 +134,17 @@ def inputs():
     file_name = input("File to play: ")
     frames, fps = extract_video(file_name, (X, Y))
     processed = process_frames(frames) 
+    print("compressed")
     jsonpayload = fast_json.dumps({
         "X": X,
         "Y": Y,
         "Fps": fps
     })
-
+    
     payload = chr(len(jsonpayload)) + jsonpayload + processed
     
     for event in events:
+      print("sending")
       event.set(payload)
     events.clear()
 
