@@ -10,14 +10,31 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from pyngrok import ngrok
 import uvicorn
+from starlette.responses import Response
 
 PORT = 28223
 OUTPUT_FOLDER_SUFFIX = "_extract"
 COMPRESSION_FILE_SUFFIX = "_compressed.blob"
 
 
-response = None
+response = "whar"
 lib = ctypes.CDLL(os.path.join(os.getcwd(), "LivestreamProcessor.dll"))
+
+events = []
+
+class RequestEvent:
+    def __init__(self):
+        self.event = threading.Event()
+        self.data = None
+        events.append(self)
+
+    def wait(self):
+        self.event.wait()
+        return self.data
+
+    def set_data(self, data):
+        self.data = data
+        self.event.set()
 
 class ProcessFramesResult(ctypes.Structure):
     _fields_ = [("data", ctypes.POINTER(ctypes.c_ubyte)), ("size", ctypes.c_size_t)]
@@ -83,8 +100,11 @@ async def clear_cache():
 
 @app.get("/")
 async def index():
-    print("hiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii")
-    return response
+    request_event = RequestEvent()
+
+
+
+    return Response(content=request_event.wait(), media_type="application/octet-stream")
 
 # Main input loop
 def inputs():
@@ -92,7 +112,7 @@ def inputs():
     os.system("cls")
     time.sleep(0.1)
     X, Y = int(input("X: ")), int(input("Y: "))
-
+    
     while True:
         file_name = input("File to play: ")
         compressed_file_name = check_cached_file(file_name, (X, Y))
@@ -106,17 +126,22 @@ def inputs():
             frames, fps = extract_video(file_name, (X, Y))
             if frames is None:
                 continue
+    
             print("Compressing")
             processed = process_frames(frames)
             print("Compression complete")
             compressed_file_name = get_compressed_filename(file_name, (X, Y))
+    
             with open(compressed_file_name, "wb") as file:
                 file.write(struct.Qpack('iii', X, Y, fps) + processed)
 
-	json_payload = fast_json.dumps({"X": X, "Y": Y, "Fps": fps}).encode('utf-8')
-	payload_length = struct.pack('I', len(json_payload))
-	payload = os.urandom(10) + payload_length + json_payload + processed
-	response = payload
+        json_payload = fast_json.dumps({"X": X, "Y": Y, "Fps": fps}).encode('utf-8')
+        payload_length = struct.pack('I', len(json_payload))
+        payload = os.urandom(10) + payload_length + json_payload + processed
+
+        for event in events:
+            event.set(payload)
+        events.clear()
 
 
 if __name__ == "__main__":
