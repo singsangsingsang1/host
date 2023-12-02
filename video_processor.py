@@ -83,6 +83,7 @@ async def clear_cache():
 
 @app.get("/")
 async def index():
+    print("hiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii")
     return response
 
 # Main input loop
