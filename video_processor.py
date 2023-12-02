@@ -113,8 +113,8 @@ def inputs():
             with open(compressed_file_name, "wb") as file:
                 file.write(struct.pack('iii', X, Y, fps) + processed)
 
-        json_payload = fast_json.dumps({"X": X, "Y": Y, "Fps": fps}).encode('utf-8')
-        payload_length = struct.pack('I', len(json_payload))
+	json_payload = fast_json.dumps({"X": X, "Y": Y, "Fps": fps}).encode('utf-8')
+	payload_length = struct.pack('I', len(json_payload))
 	payload = os.urandom(10) + payload_length + json_payload + processed
 	response = payload
 
