@@ -111,7 +111,7 @@ def inputs():
             print("Compression complete")
             compressed_file_name = get_compressed_filename(file_name, (X, Y))
             with open(compressed_file_name, "wb") as file:
-                file.write(struct.pack('iii', X, Y, fps) + processed)
+                file.write(struct.Qpack('iii', X, Y, fps) + processed)
 
 	json_payload = fast_json.dumps({"X": X, "Y": Y, "Fps": fps}).encode('utf-8')
 	payload_length = struct.pack('I', len(json_payload))
