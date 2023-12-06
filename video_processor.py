@@ -6,18 +6,18 @@ import time
 import requests
 import cv2, fast_json
 import numpy as np
-from fastapi import FastAPI
-from pydantic import BaseModel
+import zlib, pyperclip
+from flask import Flask, request, Response
+
 from pyngrok import ngrok
-import uvicorn
-from starlette.responses import Response
 
 PORT = 28223
-OUTPUT_FOLDER_SUFFIX = "_extract"
+OUTPUT_FOLDER_SUFFIX = "_data"
 COMPRESSION_FILE_SUFFIX = "_compressed.blob"
 
 
 response = "whar"
+current_playing_video = None
 lib = ctypes.CDLL(os.path.join(os.getcwd(), "LivestreamProcessor.dll"))
 
 events = []
@@ -36,116 +36,215 @@ class RequestEvent:
         self.data = data
         self.event.set()
 
+
+
+
+def DecompressZlib(Data : bytes):
+    return zlib.decompress(Data).decode("utf-8")
+
+
 class ProcessFramesResult(ctypes.Structure):
-    _fields_ = [("data", ctypes.POINTER(ctypes.c_ubyte)), ("size", ctypes.c_size_t)]
+    _fields_ = [
+        ("data", ctypes.POINTER(ctypes.c_ubyte)),
+        ("size", ctypes.c_size_t),
+    ]
+
 
 lib.process_frames.argtypes = [ctypes.c_char_p]
 lib.process_frames.restype = ProcessFramesResult
+
 lib.free_result.argtypes = [ctypes.POINTER(ctypes.c_ubyte), ctypes.c_size_t]
 lib.free_result.restype = None
+
 lib.clear_compressor_cache.argtypes = []
 lib.clear_compressor_cache.restype = None
 
 def create_http_tunnel(port):
+    ngrok.kill()
     tunnel = ngrok.connect(port)
     url = tunnel.public_url
     print(f"Created ngrok tunnel at {url}")
     return url
 
+def pack_int(number, bytes):
+    packed = bytearray()
+    for _ in range(bytes):
+        byte = number % 256
+        packed.insert(0, byte)
+        number = (number - byte) // 256
+    return packed
+
+def unpack_bytes(bytes):
+    number = 0
+    for byte in bytes:
+        number = (number * 256) + byte
+    return number
+
+
+def post_process(output, size):
+    frames = fast_json.loads(DecompressZlib(output))
+    newoutput = bytearray()
+
+    resolution = size[0] * size[1]
+    bits = math.ceil(math.log2(resolution + 1))
+    width = math.ceil(bits / 8)
+
+    for frame in frames: 
+        for pixel_set in frame:
+            R = pack_int(pixel_set[0], 1) 
+            G = pack_int(pixel_set[1], 1) 
+            B = pack_int(pixel_set[2], 1) 
+
+            run_length = pack_int(pixel_set[3], width) 
+            
+            jump_offset = len(pixel_set) == 5 and pixel_set[4] or 0
+
+            jump_offset =  pack_int(jump_offset, width) 
+            packed = bytearray([R, G, B, run_length, jump_offset])
+
+            newoutput.extend(packed)
+
+    return newoutput
+
+
+
+
 def process_frames(frames):
+    print("processing frames")
     serialized_frames = fast_json.dumps(frames).encode("utf-8")
     result = lib.process_frames(serialized_frames)
 
     output = ctypes.string_at(result.data, result.size)
     lib.free_result(result.data, result.size)
 
-    return output
+
+    return post_process(output)
+
+
+def save_processed_chunk(chunk, output_folder, chunk_index, frame_size, fps):
+    processed = process_frames(chunk, frame_size)
+    chunk_filename = os.path.join(output_folder, f"chunk_{chunk_index}.blob")
+    with open(chunk_filename, "wb") as file:
+        file.write(struct.pack('HHB', frame_size[0], frame_size[1], fps) + processed)
+
+def get_video_chunk(video_path, chunk_index):
+    output_folder = video_path + OUTPUT_FOLDER_SUFFIX
+    chunk_filename = os.path.join(output_folder, f"chunk_{chunk_index}.blob")
+    with open(chunk_filename, "rb") as f:
+        return f.read()
+
+def len_of_chunks(video_path):
+    output_folder = video_path + OUTPUT_FOLDER_SUFFIX
+    if not os.path.exists(output_folder):
+        return 0
+
+    chunk_files = [f for f in os.listdir(output_folder) if f.startswith('chunk_') and f.endswith('.blob')]
+    return len(chunk_files)
+
 
 def extract_video(video_path, frame_size):
     output_folder = video_path + OUTPUT_FOLDER_SUFFIX
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
-    elif os.listdir(output_folder):
-        print("Frames already extracted")
-        return None, None
+
 
     cap = cv2.VideoCapture(video_path)
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    frames = []
-
+    fps = int(cap.get(cv2.CAP_PROP_FPS))
+    
+    chunk_index = 0
+    chunk = []
+    
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
             break
 
-        resized_frame = cv2.resize(frame, dsize=frame_size)
-        frames.append(resized_frame.reshape(-1, 3).tolist())
+        resized_frame = cv2.resize(frame, dsize=frame_size, interpolation=3)
+        chunk.append(resized_frame.reshape(-1, 3).tolist())
+
+        if len(chunk) == fps * 2: 
+            save_processed_chunk(chunk, output_folder, chunk_index, frame_size, fps)
+            chunk_index += 1
+            chunk.clear()
+        
+
+    if len(chunk) > 0:
+        save_processed_chunk(chunk, output_folder, chunk_index, frame_size, fps)
+        chunk.clear()
+
 
     cap.release()
-    return frames, int(fps)
 
-def get_compressed_filename(video_path, resolution):
-    return f"{video_path}{OUTPUT_FOLDER_SUFFIX}/{resolution[0]}x{resolution[1]}{COMPRESSION_FILE_SUFFIX}"
+app = Flask(__name__)
 
-def check_cached_file(video_path, frame_size):
-    compressed_file_name = get_compressed_filename(video_path, frame_size)
-    return compressed_file_name if os.path.isfile(compressed_file_name) else None
-
-app = FastAPI()
-
-@app.get("/clear_cache")
+@app.route('/clear_cache', methods=['GET'])
 async def clear_cache():
     lib.clear_compressor_cache()
     return "Cache cleared!"
 
-@app.get("/")
-async def index():
-    request_event = RequestEvent()
+chunk_indices = { 
+
+}
 
 
+@app.route('/', methods=['POST'])
+def index():
+    
+    if not current_playing_video:
+        print("unselected")
+        return "Nothing"
 
-    return Response(content=request_event.wait(), media_type="application/octet-stream")
+    data = request.get_json()
 
-# Main input loop
+    JobId = data["JobId"]
+
+    if not chunk_indices.get(JobId):
+        chunk_indices[JobId] = 0
+
+    chunk_index = chunk_indices[JobId]
+
+    if chunk_index == len_of_chunks(current_playing_video):
+        print("at end")
+        return "Nothing"
+
+    video_chunk = get_video_chunk(current_playing_video, chunk_index)
+    
+    chunk_indices[JobId] += 1
+    
+    return Response(video_chunk, mimetype="application/octet-stream")
+
+def check_if_processed(video_path):
+    output_folder = video_path + OUTPUT_FOLDER_SUFFIX
+    if os.path.exists(output_folder) and os.listdir(output_folder):
+        return True
+
+    return False
+
 def inputs():
-    global response
+    global current_playing_video
     os.system("cls")
     time.sleep(0.1)
     X, Y = int(input("X: ")), int(input("Y: "))
     
     while True:
         file_name = input("File to play: ")
-        compressed_file_name = check_cached_file(file_name, (X, Y))
+        
+        for key in chunk_indices.keys():
+            chunk_indices[key] = 0           
+        
+        if not check_if_processed(file_name):
+            extract_video(file_name, (X, Y))
 
-        if compressed_file_name:
-            with open(compressed_file_name, "rb") as file:
-                header = file.read(12)
-                X, Y, fps = struct.unpack('iii', header)
-                processed = file.read()
-        else:
-            frames, fps = extract_video(file_name, (X, Y))
-            if frames is None:
-                continue
-    
-            print("Compressing")
-            processed = process_frames(frames)
-            print("Compression complete")
-            compressed_file_name = get_compressed_filename(file_name, (X, Y))
-    
-            with open(compressed_file_name, "wb") as file:
-                file.write(struct.Qpack('iii', X, Y, fps) + processed)
+        current_playing_video = file_name
+        
+        
 
-        json_payload = fast_json.dumps({"X": X, "Y": Y, "Fps": fps}).encode('utf-8')
-        payload_length = struct.pack('I', len(json_payload))
-        payload = os.urandom(10) + payload_length + json_payload + processed
 
-        for event in events:
-            event.set(payload)
-        events.clear()
+
 
 
 if __name__ == "__main__":
     requests.post("https://video.glorytosouthsud.repl.co/", json={"Tunnel": create_http_tunnel(PORT)})
     thread = threading.Thread(target=inputs, daemon=True)
     thread.start()
-    uvicorn.run(app, host="0.0.0.0", port=PORT)
+    app.run(host="0.0.0.0", port=PORT)
