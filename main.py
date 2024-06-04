@@ -244,7 +244,7 @@ if __name__ == "__main__":
     WebcamDaemon()
     PORT = 42171
     ServerUrl = USE_NGROK and CreateHTTPTunnel(PORT) or f"http://{GetIP()}:{PORT}"
-    requests.post("http://172.235.51.119:42070/post_tunnel", json={"url": ServerUrl})
+    requests.post("http://172.235.51.119:42070/update_setting", json={"Tunnel": ServerUrl})
     
     print(f"Server is on {ServerUrl}")
     app.run(host='0.0.0.0', port=PORT)
