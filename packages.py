@@ -50,7 +50,7 @@ while True:
         break
     except ImportError as e:
         InitNGROK = True
-        install_packages(['flask', 'opencv-python', 'pyngrok', 'pyautogui', 'numpy', 'fast_json', 'keyboard', 'pyvirtualcam', 'requests', 'dxcam'])
+        install_packages(['flask', 'opencv-python', 'pyngrok', 'mouse', 'numpy', 'fast_json', 'keyboard', 'pyvirtualcam', 'requests', 'dxcam'])
 
 if InitNGROK:
     with open("setup.py", "w") as file: 
