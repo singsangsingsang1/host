@@ -181,15 +181,17 @@ def VMRefresh():
 
 @app.route('/VMInput', methods = ["POST"]) # type: ignore
 def VMInput():
-    RequestBody = request.get_json()
-    Type = RequestBody.get("Type")
-    Body = RequestBody.get("Body")
-    
-    ({
-        "Mouse" : Click,
-        "Keyboard" : PressAndRelease
-    })[Type](Body)
-
+    try:
+        RequestBody = request.get_json()
+        Type = RequestBody.get("Type")
+        Body = RequestBody.get("Body")
+        
+        ({
+            "Mouse" : Click,
+            "Keyboard" : PressAndRelease
+        })[Type](Body)
+    except Exception:
+        pass
     return "OK!"
 
 @app.route("/GetVideoData", methods = ["POST", "GET"])
