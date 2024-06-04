@@ -151,13 +151,13 @@ def Click(Body):
     X = Body["X"]
     Y = Body["Y"]
     Type = Body["MouseButton"]
-    pyautogui.moveTo(X, Y)
+    mouse.move(X, Y)
 
     if Type == "Left":
-        pyautogui.click()
+        mouse.click()
     elif Type == "Right":
-        pyautogui.click(button='right')
-
+        mouse.right_click()
+        
 def PressAndRelease(key):
     keyboard.press(key)
     time.sleep(1)
