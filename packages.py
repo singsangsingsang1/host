@@ -20,20 +20,20 @@ if len(sys.argv) == 1:
     X = input("X: ")
 
     if X == "":
-        X = 192
-        Y = 108
+        X = 192*2
+        Y = 108*2
         FPS = 60
-        SIZE = 7
+        SIZE = 7*2
         USE_NGROK = True
         print("default")
     else:
         X = int(X)
         Y, FPS, SIZE, USE_NGROK  = int(input("Y: ")), int(input("FPS: ")), int(input("Size: ")) , input("Use ngrok?: ").lower() == "y"
 else:
-    X = 192
-    Y = 108
+    X = 192*2
+    Y = 108*2
     FPS = 60
-    SIZE = 7
+    SIZE = 7*2
     USE_NGROK = True
 
 InitNGROK = False # very very hacky
