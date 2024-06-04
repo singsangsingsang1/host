@@ -20,20 +20,20 @@ if len(sys.argv) == 1:
     X = input("X: ")
 
     if X == "":
-        X = 192*2
-        Y = 108*2
+        X = 192
+        Y = 108
         FPS = 60
-        SIZE = 7*2
+        SIZE = 7
         USE_NGROK = True
         print("default")
     else:
         X = int(X)
         Y, FPS, SIZE, USE_NGROK  = int(input("Y: ")), int(input("FPS: ")), int(input("Size: ")) , input("Use ngrok?: ").lower() == "y"
 else:
-    X = 192*2
-    Y = 108*2
+    X = 192
+    Y = 108
     FPS = 60
-    SIZE = 7*2
+    SIZE = 7
     USE_NGROK = True
 
 InitNGROK = False # very very hacky
@@ -41,7 +41,7 @@ while True:
     try:  
         from flask import Flask, request, Response
         import fast_json
-        import pyautogui, keyboard  
+        import mouse, keyboard  
         import pyvirtualcam
         import numpy as np
         import requests
