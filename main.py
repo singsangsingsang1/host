@@ -69,7 +69,7 @@ def CreateHTTPTunnel(Port):
     return url
 
 def quantize(img):
-    div = 128
+    div = 64
     quantized = img // div * div + div // 2
     return quantized
 
