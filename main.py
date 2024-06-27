@@ -98,7 +98,7 @@ def TakeScreenshots(Data):
             continue
 
         res = cv2.resize(image, dsize=(X, Y), interpolation=3).reshape(-1, 3)
-        screenshots.append(quantize(res).tolist())
+        screenshots.append(res.tolist())
 
     return screenshots
 
