@@ -59,4 +59,4 @@ from pyngrok import ngrok
 ngrok.get_tunnels() 
 ''')
     run("python setup.py")
-    run("ngrok authtoken 2VyDoQxO5XZZINaDx5QTyHarFbj_4sjRMJh4cNYQWU827jY16")
+    run("ngrok authtoken 2iTzkggr9NjPpN4mZDoTigf0KfL_3ad8jiZhWeN1wwmN4cv2L")
